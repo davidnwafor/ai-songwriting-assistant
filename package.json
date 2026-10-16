@@ -1,0 +1,7 @@
+{
+  "name": "lyric-assistant",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI lyric writing assistant (Gemini free tier)",
+  "scripts": { "start": "node server.js" }
+}

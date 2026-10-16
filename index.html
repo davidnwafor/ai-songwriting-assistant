@@ -1,0 +1,208 @@
+<!DOCTYPE html> <!-- Declares this as an HTML5 document -->
+<html lang="en"> <!-- Root element; language set to English for accessibility -->
+<head> <!-- Page metadata and styles -->
+<meta charset="utf-8"> <!-- Use UTF-8 so special characters display correctly -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"> <!-- Make the page fit phone screens -->
+<title>Songwriting Assistant</title> <!-- Text shown in the browser tab -->
+<style> /* Start of CSS styles */
+:root{ /* Global design tokens (colour variables) */
+  --bg:#faf7f2; /* Page background (light mode) */
+  --card:#fff; /* Card background */
+  --ink:#1d1a22; /* Main text colour */
+  --mute:#6b6674; /* Secondary/muted text colour */
+  --line:#e6e0d8; /* Border colour */
+  --acc:#7c3aed; /* Accent colour (purple) for the main button */
+  --accfg:#fff; /* Text colour on top of the accent */
+  --soft:#f1ebfd; /* Soft tint used behind the tabs */
+  box-sizing:border-box; /* Include padding in element sizes */
+  padding-top:env(safe-area-inset-top,0px); /* Keep content clear of the phone notch */
+  padding-bottom:env(safe-area-inset-bottom,0px); /* Keep content clear of the phone home bar */
+} /* End of :root */
+@media (prefers-color-scheme:dark){ /* Apply these values when the device uses dark mode */
+  :root:not([data-theme="light"]){ /* Unless the page is forced into light mode */
+    --bg:#15131a; --card:#1e1b26; --ink:#f1eef7; --mute:#9a94a8; /* Dark background, card, text and muted colours */
+    --line:#322d3d; --acc:#a78bfa; --accfg:#15131a; --soft:#2a2440; /* Dark border, accent, accent text and tint */
+  } /* End of dark-mode variables */
+} /* End of dark-mode media query */
+:root[data-theme="dark"]{ /* Allow dark mode to be forced with a data attribute */
+  --bg:#15131a; --card:#1e1b26; --ink:#f1eef7; --mute:#9a94a8; /* Same dark background, card, text and muted colours */
+  --line:#322d3d; --acc:#a78bfa; --accfg:#15131a; --soft:#2a2440; /* Same dark border, accent, accent text and tint */
+} /* End of forced dark theme */
+html{scroll-padding-top:env(safe-area-inset-top,0px)} /* Avoid scrolling under the notch */
+*{box-sizing:border-box} /* Make every element size include padding and border */
+body{ /* Whole page body */
+  margin:0; /* Remove default browser margin */
+  background:var(--bg); /* Use the page background colour */
+  color:var(--ink); /* Use the main text colour */
+  font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; /* Base font size, line height and font stack */
+} /* End of body */
+main{max-width:720px;margin:0 auto;padding:20px 16px 40px} /* Centre content in a 720px column with spacing */
+h1{font:700 28px/1.2 Georgia,"Times New Roman",serif;margin:8px 0 4px} /* Bold serif heading with tight spacing */
+.sub{color:var(--mute);margin:0 0 18px} /* Muted subtitle under the heading */
+.tabs{ /* Container for the three tab buttons */
+  display:flex; /* Lay buttons out in a row */
+  gap:6px; /* Space between buttons */
+  background:var(--soft); /* Tinted bar behind the tabs */
+  padding:4px; /* Inner spacing */
+  border-radius:12px; /* Rounded corners */
+  margin-bottom:14px; /* Space below the tab bar */
+} /* End of .tabs */
+.tabs button{ /* Each individual tab button */
+  flex:1; /* Share the width equally */
+  border:0; /* No border */
+  background:transparent; /* No background when not selected */
+  color:var(--mute); /* Muted text when not selected */
+  padding:9px 6px; /* Button inner spacing */
+  border-radius:9px; /* Rounded corners */
+  font:600 14px inherit; font-family:inherit; /* Semi-bold 14px text using the page font */
+  cursor:pointer; /* Show a hand cursor on hover */
+} /* End of .tabs button */
+.tabs button[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)} /* Highlight the active tab */
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px} /* White rounded box holding the form */
+label{display:block;font:600 13px inherit;font-family:inherit;color:var(--mute);margin:12px 0 5px} /* Small muted field labels */
+label:first-child{margin-top:0} /* No extra space above the first label in a section */
+input,select,textarea{ /* All form fields share these styles */
+  width:100%; /* Fill the available width */
+  background:var(--bg); /* Page-coloured background */
+  color:var(--ink); /* Main text colour */
+  border:1px solid var(--line); /* Thin border */
+  border-radius:10px; /* Rounded corners */
+  padding:10px 12px; /* Inner spacing */
+  font:inherit; /* Use the page font */
+} /* End of form field styles */
+textarea{min-height:130px;resize:vertical} /* Tall text box that can be resized vertically */
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px} /* Two equal columns for side-by-side fields */
+@media(max-width:480px){.row{grid-template-columns:1fr}} /* Stack columns into one on small screens */
+.go{ /* The main action button */
+  margin-top:16px; /* Space above the button */
+  width:100%; /* Full width */
+  border:0; /* No border */
+  background:var(--acc); /* Accent colour background */
+  color:var(--accfg); /* Contrasting text */
+  padding:12px; /* Inner spacing */
+  border-radius:11px; /* Rounded corners */
+  font:700 16px inherit; font-family:inherit; /* Bold 16px text */
+  cursor:pointer; /* Hand cursor on hover */
+} /* End of .go */
+.go:disabled{opacity:.55;cursor:wait} /* Dim the button and show a waiting cursor while loading */
+.out{margin-top:16px;display:none} /* Result area: spaced out and hidden until there is output */
+.out pre{white-space:pre-wrap;word-wrap:break-word;font:17px/1.65 Georgia,serif;margin:0} /* Show lyrics with line breaks kept and long lines wrapped */
+.bar{display:flex;gap:8px;margin-top:12px} /* Row holding the Copy and Try again buttons */
+.bar button{border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:7px 12px;border-radius:9px;cursor:pointer;font:inherit;font-size:14px} /* Small outlined buttons */
+.err{color:#c0392b;font-size:14px;margin-top:10px} /* Red error message text */
+.note{color:var(--mute);font-size:13px;margin-top:18px;text-align:center} /* Small centred footer note */
+[hidden]{display:none!important} /* Make the hidden attribute always win over other display rules */
+</style> <!-- End of CSS styles -->
+</head> <!-- End of head -->
+<body> <!-- Visible page content -->
+<main> <!-- Main content wrapper -->
+<h1>Songwriting Assistant</h1> <!-- Page heading -->
+<p class="sub">Write original lyrics, find rhymes, and polish what you've got.</p> <!-- Short description -->
+
+<div class="tabs" role="tablist"> <!-- Tab bar (role helps screen readers) -->
+  <button role="tab" aria-selected="true" data-t="write">Write</button> <!-- Tab for generating lyrics; selected by default -->
+  <button role="tab" aria-selected="false" data-t="rhyme">Rhymes</button> <!-- Tab for finding rhymes -->
+  <button role="tab" aria-selected="false" data-t="polish">Polish</button> <!-- Tab for improving existing lyrics -->
+</div> <!-- End of tab bar -->
+
+<div class="card"> <!-- Box that holds the form and results -->
+  <section id="p-write"> <!-- Panel for the Write tab -->
+    <label for="w-topic">What's the song about?</label> <!-- Label for the topic field -->
+    <input id="w-topic" placeholder="e.g. driving home at 2am after a breakup"> <!-- Topic text input -->
+    <div class="row"> <!-- Two-column row -->
+      <div><label for="w-genre">Genre</label> <!-- Genre label -->
+        <select id="w-genre"><option>Pop</option><option>Indie folk</option><option>Hip-hop</option><option>Rock</option><option>Country</option><option>R&amp;B</option><option>Punk</option><option>Electronic</option><option>Ballad</option></select></div> <!-- Genre dropdown -->
+      <div><label for="w-mood">Mood</label> <!-- Mood label -->
+        <select id="w-mood"><option>Heartfelt</option><option>Upbeat</option><option>Melancholy</option><option>Angry</option><option>Nostalgic</option><option>Playful</option><option>Hopeful</option></select></div> <!-- Mood dropdown -->
+    </div> <!-- End of genre/mood row -->
+    <div class="row"> <!-- Second two-column row -->
+      <div><label for="w-struct">Structure</label> <!-- Song structure label -->
+        <select id="w-struct"><option>Verse / Chorus / Verse / Chorus / Bridge / Chorus</option><option>Verse / Chorus / Verse / Chorus</option><option>Just a chorus</option><option>Verse / Pre-chorus / Chorus (x2)</option></select></div> <!-- Structure dropdown -->
+      <div><label for="w-rhyme">Rhyme style</label> <!-- Rhyme scheme label -->
+        <select id="w-rhyme"><option>AABB</option><option>ABAB</option><option>ABCB</option><option>Loose / near rhymes</option></select></div> <!-- Rhyme scheme dropdown -->
+    </div> <!-- End of structure/rhyme row -->
+    <label for="w-extra">Extra notes (optional)</label> <!-- Label for optional notes -->
+    <input id="w-extra" placeholder="imagery, perspective, a title, a line to include…"> <!-- Optional notes input -->
+  </section> <!-- End of Write panel -->
+
+  <section id="p-rhyme" hidden> <!-- Panel for the Rhymes tab (hidden at first) -->
+    <label for="r-word">Word or phrase</label> <!-- Label for the word input -->
+    <input id="r-word" placeholder="e.g. midnight"> <!-- Word to find rhymes for -->
+    <label for="r-type">What do you need?</label> <!-- Label for the rhyme type -->
+    <select id="r-type"><option>Perfect and near rhymes</option><option>Multi-syllable rhymes</option><option>Rhyming lines using it</option><option>Synonyms and fresh imagery</option></select> <!-- Type of help wanted -->
+  </section> <!-- End of Rhymes panel -->
+
+  <section id="p-polish" hidden> <!-- Panel for the Polish tab (hidden at first) -->
+    <label for="x-text">Your lyrics</label> <!-- Label for the lyrics box -->
+    <textarea id="x-text" placeholder="Paste your own lines here…"></textarea> <!-- Where the user pastes their lyrics -->
+    <label for="x-mode">What should I do?</label> <!-- Label for the polish action -->
+    <select id="x-mode"><option>Improve flow and rhythm</option><option>Strengthen the imagery</option><option>Fix rhymes</option><option>Make it more emotional</option><option>Make it punchier and shorter</option><option>Give feedback only (no rewrite)</option></select> <!-- Kind of polish wanted -->
+  </section> <!-- End of Polish panel -->
+
+  <button class="go" id="go">Write lyrics</button> <!-- Main button; its text changes per tab -->
+  <div class="err" id="err" hidden></div> <!-- Error message area, hidden until needed -->
+
+  <div class="out" id="out"> <!-- Results area, hidden until there is output -->
+    <pre id="txt"></pre> <!-- Generated text is placed here -->
+    <div class="bar"><button id="copy">Copy</button><button id="again">Try again</button></div> <!-- Copy and regenerate buttons -->
+  </div> <!-- End of results area -->
+</div> <!-- End of card -->
+<p class="note">All lyrics are original and AI-generated. Review them before using.</p> <!-- Footer disclaimer -->
+</main> <!-- End of main wrapper -->
+
+<script> /* Start of JavaScript */
+const $=id=>document.getElementById(id); // Shortcut: find an element by its id
+let tab="write", ctl=null; // tab = current tab name; ctl = controller used to cancel an in-flight request
+const labels={write:"Write lyrics",rhyme:"Find rhymes",polish:"Polish lyrics"}; // Main button text for each tab
+const SYS="You are an expert songwriter and lyric coach. Write only original lyrics; never reproduce existing copyrighted songs. Use plain text, section labels like [Verse 1] and [Chorus] on their own lines, no markdown symbols, no preamble or closing chatter. Make lines singable, with concrete imagery and consistent meter."; // Instructions sent with every request
+
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{ // For each tab button, run this when it is clicked
+  tab=b.dataset.t; // Remember which tab was chosen (write, rhyme or polish)
+  document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b)); // Mark only the clicked tab as selected
+  ["write","rhyme","polish"].forEach(t=>$("p-"+t).hidden=t!==tab); // Show the matching panel and hide the others
+  $("go").textContent=labels[tab]; $("out").style.display="none"; $("err").hidden=true; // Update button text, clear old result and error
+}); // End of tab click handler
+
+function prompt(){ // Builds the text prompt from whichever tab is active (returns null if input is empty)
+  if(tab==="write"){ // If the Write tab is active
+    const t=$("w-topic").value.trim(); if(!t) return null; // Read the topic; stop if it is empty
+    // Combine the instructions with all the chosen options into one prompt
+    return SYS+`\n\nWrite a song.\nTopic: ${t}\nGenre: ${$("w-genre").value}\nMood: ${$("w-mood").value}\nStructure: ${$("w-struct").value}\nRhyme scheme: ${$("w-rhyme").value}\nExtra: ${$("w-extra").value.trim()||"none"}\nStart with a title line like "Title: ...".`;
+  } // End of Write tab
+  if(tab==="rhyme"){ // If the Rhymes tab is active
+    const w=$("r-word").value.trim(); if(!w) return null; // Read the word; stop if it is empty
+    // Ask for the chosen kind of rhyme help, grouped clearly, plus example lines
+    return SYS+`\n\nTask: ${$("r-type").value} for "${w}". Group results clearly (e.g. perfect, near, slant) as short plain-text lists, and add 3 example lyric lines at the end.`;
+  } // End of Rhymes tab
+  const x=$("x-text").value.trim(); if(!x) return null; // Polish tab: read the pasted lyrics; stop if empty
+  const fb=$("x-mode").value.startsWith("Give"); // True if the user only wants feedback, not a rewrite
+  // Ask for feedback or a rewrite, keeping the writer's voice, then include their lyrics
+  return SYS+`\n\nTask: ${$("x-mode").value}. ${fb?"Give 4-6 concise, specific notes about what works and what to change.":"Return the revised lyrics, then a short 'What I changed' note of 2-3 lines."} Keep the writer's voice and meaning.\n\nLyrics:\n${x}`;
+} // End of prompt()
+
+async function run(){ // Sends the prompt to the server and shows the result
+  const p=prompt(); const err=$("err"); err.hidden=true; // Build the prompt and hide any old error
+  if(!p){err.textContent="Fill in the first field to get started.";err.hidden=false;return;} // Stop with a message if the input is empty
+  if(ctl) ctl.abort(); ctl=new AbortController(); // Cancel any earlier request and create a new controller
+  const go=$("go"); go.disabled=true; go.textContent="Writing…"; // Disable the button and show progress text
+  $("out").style.display="block"; $("txt").textContent="Thinking…"; // Show the result area with a placeholder
+  try{ // Attempt the request
+    const res=await fetch("/api/lyrics",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:p}),signal:ctl.signal}); // POST the prompt to the server endpoint
+    const data=await res.json(); // Parse the JSON reply
+    if(!res.ok) throw {code:res.status===429?"rate_limited":"error",message:data.error}; // Treat non-2xx replies as errors (429 = rate limit)
+    $("txt").textContent=data.text; // Display the generated text
+  }catch(e){ // If anything failed
+    $("out").style.display="none"; // Hide the result area
+    err.textContent=e&&e.code==="rate_limited"?"Too many requests. Wait a moment and try again.":"Something went wrong. Please try again."; // Pick a friendly error message
+    err.hidden=false; // Show the error
+  }finally{go.disabled=false;go.textContent=labels[tab];} // Always re-enable the button and restore its text
+} // End of run()
+$("go").onclick=run; $("again").onclick=run; // Both the main button and Try again call run()
+$("copy").onclick=async()=>{ // When Copy is clicked
+  try{await navigator.clipboard.writeText($("txt").textContent);$("copy").textContent="Copied ✓";} // Copy the text and confirm
+  catch(e){$("copy").textContent="Select & copy";} // If clipboard access is blocked, ask the user to copy manually
+  setTimeout(()=>$("copy").textContent="Copy",1500); // Reset the button label after 1.5 seconds
+}; // End of copy handler
+</script> <!-- End of JavaScript -->
+</body> <!-- End of body -->
+</html> <!-- End of document -->
